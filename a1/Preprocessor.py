@@ -11,7 +11,7 @@ import json
 def do_preprocessor(tweets_path, stopwords_path):
 
     #Create string punctuation set
-    punct_set = set(string.punctuation)
+    punct_set = set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
     
     #Create stopwords array from path
     stopwords = set(line.strip() for line in open(stopwords_path))
