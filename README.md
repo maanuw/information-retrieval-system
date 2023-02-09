@@ -3,6 +3,7 @@ Group 12 Assignments for CSI4107
 
 Students:
 Simon Proulx 300067852
+Mahdi Chiboub 300094626
 
 
 # Assignment 1
