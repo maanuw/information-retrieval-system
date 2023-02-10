@@ -4,41 +4,43 @@ import json
 import copy
 
 
-def do_indexer(document_word_count_dict, document_word_dict):
+def indexer(document_word_dict):
 
-    #############################
-    #frequency_dict
-    #This dictionary with frequency values will be used for queries
+### need to test code
     
-    #Create a list for all words (no duplicates)
-    all_words = []
+    all_tokens = []
 
-    #Iterate through document_word_dict
-    for i in document_word_dict:
-        token_words = document_word_dict.get(i)
+    # Iterate through document_word_dictionary to retrieve the tokens obtained from the preprocessing module and store them in token_words list for
+    # each document
+    for docID in document_word_dict:
+        token_words = document_word_dict.get(docID)
 
-        #Iterate through token_words
-        for word in token_words:
-            if word not in all_words:
-                all_words.append(word)
+        # Iterate through token_words and add the word to the list of all the words initially created to have a list of words across all the documents
+        # the tokens are unique so we don't have any duplicate, now we need to use this to create a dictionary with the frequency of each token
+        for token in token_words:
+            if word not in all_tokens:
+                all_tokens.append(token)
 
-    #Create dictionary from array list
     frequency_dict = {}
-    for i in all_words:
-        frequency_dict[i] = {}
-
-    #Add inner keys to dictionary
-    for i in document_word_count_dict:
-        doc = document_word_count_dict.get(i)
-        for word in doc:
-            number = doc.get(word)
-            frequency_dict[word][i] = number
-
-
-    #Test out frequency_dict (can comment out)
-    #print(frequency_dict)
-
+    for token in all_tokens:
+        frequency_dict[word] = {}
     
+    # Create a count_words_in_doc dictionary to using Counter to count frequency of appearance of each word in every document
+    count_words_in_doc = {}
+    for doc in document_word_dict:
+        count_words_in_doc[doc] = Counter(document_word_dict[doc])
+    
+    # Creating a loop to iterate through Counters and get frequency values for words, store them in dictionary now we have all toens with
+    # their respective frequency values
+    for docID in count_words_in_doc:
+        counter = count_words_in_doc.get(docID)
+        for token in counter:
+            token_frequency = counter.get(token)
+            frequency_dict[token][docID] = token_frequency
+
+
+### need to make changes here!!
+
     #Save to folder
     #Important: When we test later, we only need to load the json file (No need to recreate a new file every query)
     frequency_dict_path = "Modules/data/frequency_dict.json"
