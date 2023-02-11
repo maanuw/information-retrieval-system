@@ -1,8 +1,9 @@
 # CSI4107
 Group 12 Assignments for CSI4107
 
-Students:
-Simon Proulx 300067852
+### Students:
+- Simon Proulx 300067852
+- Manav Patel
 
 
 # Assignment 1
