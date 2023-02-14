@@ -1,4 +1,5 @@
 from preprocess import importCollection
+from Indexer import createInvertedIndex
 
 
 def main():
@@ -7,8 +8,13 @@ def main():
     print("\n Importing collection of documents ...\n")
     collectionPath = './coll'
 
-    # Import all documents from the coll directory 
-    importCollection(collectionPath)
+    # Import all documents from the coll directory.
+    #importCollection(collectionPath)
+
+    # Create inverted index.
+    collectionTokens = './assets/collection-tokens.json'
+    createInvertedIndex(collectionTokens)
+
 
 if __name__ == "__main__":
     main()

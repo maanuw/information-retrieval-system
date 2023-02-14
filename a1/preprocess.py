@@ -2,6 +2,7 @@ import nltk
 import string
 import os
 import json
+import re
 
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
@@ -16,14 +17,17 @@ nltk.download('stopwords')
 def importCollection(collectionPath):
     '''
     This function imports all textual paragraphs from the collection of documents.
-    
+    TODO: Remove unwanted characters like '//, \\, |, ~, \'(num), .'
     :param string collectionPath: String path to the directory containing collection docs.
     :return: list of tokens for all documents.
     :returnType: Dictionary
     '''
     # Loop over all documents in the collection.
     vocabulary = dict()
+    i = 0
     for filename in os.listdir(collectionPath):
+        i = i + 1
+        print(str(i) + " of 322")
         with open(os.path.join(collectionPath, filename), 'r') as f: 
             soup=BeautifulSoup(f, features='lxml', from_encoding="utf-8-sig")
 
@@ -32,10 +36,10 @@ def importCollection(collectionPath):
         docVocabulary = []
         # Add tokens for each document.
         for text in res:
-            docVocabulary.extend(tokenize(str(text).replace("<text>", "").replace("</text>", "").replace(",", " ").replace("-", " ")))
-
-        # Removing duplicates from the list.
-        docVocabulary = list(dict.fromkeys(docVocabulary))
+            pattern = r'[0-9]'
+            newStr = re.sub(pattern, '', str(text))
+            docVocabulary.extend(tokenize(newStr.replace("<text>", "").replace("</text>", "").replace(",", " ").replace("-", " ")))
+        
         # Add document tokens to all doc dictionary.
         vocabulary[filename]=docVocabulary
         
@@ -43,6 +47,47 @@ def importCollection(collectionPath):
     makeJson(vocabulary, "./assets/collection-tokens")
 
     return vocabulary
+
+def importQuery(queryPath):
+    '''
+    This function imports all queries from the collection of documents.
+    TODO: Remove unwanted characters like '//, \\, |, ~, \'(num), .'
+    :param string collectionPath: String path to the directory containing queries.
+    :return: list of tokens for all queries.
+    :returnType: Dictionary
+    '''
+    # Loop over all queries.
+    queryVocabulary = dict()
+    
+    with open(os.path.join(queryPath, filename), 'r') as f: 
+        soup=BeautifulSoup(f, features='lxml', from_encoding="utf-8-sig")
+
+    resTitle=soup.findAll("title")
+    resDescription=soup.findAll("desc")
+
+    # Token list for each query.
+    titleVocabulary = []
+    descVocabulary = []
+    # Add tokens for each query title.
+    for title in resTitle:
+        pattern = r'[0-9]'
+        newStr = re.sub(pattern, '', str(title))
+        titleVocabulary.extend(tokenize(newStr.replace("<title>", "").replace("</title>", "").replace(",", " ").replace("-", " ")))
+
+    # Add tokens for each query description.
+    for desc in resDescription:
+        pattern = r'[0-9]'
+        newStr = re.sub(pattern, '', str(desc))
+        descVocabulary.extend(tokenize(newStr.replace("<desc>", "").replace("</desc>", "").replace(",", " ").replace("-", " ")))
+
+    # Add document tokens to all doc dictionary.
+    for i in range(len(resTitle)):
+        queryVocabulary[i] = titleVocabulary[i].extend(descVocabulary[i])
+
+    # Create json file.
+    makeJson(queryVocabulary, "./assets/query-tokens")
+
+    return queryVocabulary
 
 def tokenize(text):
     '''
@@ -63,6 +108,7 @@ def tokenize(text):
     allStopWords = set(stopwords.words('english')).union((line.strip('\n') for line in open("./assets/stopwords.txt", "r"))).union(edgeStopWords)
     
     # List of Tokenized paragraph.
+    # TODO:  check if isnumeric() and isFloat(word) do the same thing.
     tokens = [ps.stem(word.lower()) for word in word_tokenize(text)
         if word.lower() not in allStopWords and word not in string.punctuation
         and not word.isnumeric() and not isFloat(word)]

@@ -1,76 +1,79 @@
-from collections import Counter
 import math
 import json
-import copy
 
+from preprocess import makeJson
 
-def indexer(document_word_dict):
+def createInvertedIndex(collectionTokens):
+    '''
+    Builds an inverted index for a vocabulary tokens.
 
-    all_tokens = []
+    :params dict collectionTokens: A dictionary of tokens and the documents the occur in.
+    :return: An invert index of tokens.
+    :returnType: dict
+    '''
+    # List of unique token values.
+    allTokens = []
+    # List of tokens and docs they occur in.
+    vocabulary = openDictionary(collectionTokens)
+    # Total number of documents.
+    noOfDocs = len(collectionTokens)
 
-    # Iterate through document_word_dictionary to retrieve the tokens obtained from the preprocessing module and store them in token_words list for
-    # each document
-    for docID in document_word_dict:
-        token_words = document_word_dict.get(docID)
+    # Get all token values.
+    for document in vocabulary:
+        allTokens.extend(vocabulary[document])
 
-        # Iterate through token_words and add the word to the list of all the words initially created to have a list of words across all the documents
-        # the tokens are unique so we don't have any duplicate, now we need to use this to create a dictionary with the frequency of each token
-        for token in token_words:
-            if token not in all_tokens:
-                all_tokens.append(token)
+    # before: 2439989
+    #print(allTokens)
+    # Remove duplicate tokens.
+    allTokens = list(dict.fromkeys(allTokens))
+    print(allTokens)
+    print(len(allTokens))
+    # after: 135983
+    #print(len(allTokens))
+    #exit()
 
-    frequency_dict = {}
-    for token in all_tokens:
-        frequency_dict[token] = {}
-    
-    # Create a count_words_in_doc dictionary to using Counter to count frequency of appearance of each word in every document
-    count_words_in_doc = {}
-    for doc in document_word_dict:
-        count_words_in_doc[doc] = Counter(document_word_dict[doc])
-    
-    # Creating a loop to iterate through Counters and get frequency values for words, store them in dictionary now we have all toens with
-    # their respective frequency values
-    for docID in count_words_in_doc:
-        counter = count_words_in_doc.get(docID)
-        for token in counter:
-            token_frequency = counter.get(token)
-            frequency_dict[token][docID] = token_frequency
+    # Indexing the tokens obtained.
+    invertedIndex = dict()
+    i = 0
+    for token in allTokens:
+        i = i + 1
+        print(str(i) + " of " + str(len(allTokens)))
+        # Store token data : df, idf, tfs.
+        tokenInfo = dict()
+        # Tfs for token in each document.
+        tokenFreqs = dict()
+        for document in vocabulary:
+            # Get Tf for this document.
+            tokenFreq = vocabulary[document].count(token)
+            if tokenFreq > 0:
+                # Add document to list of document: Tfs.
+                tokenFreqs[document] = tokenFreq
+        # Add Df, Idf values.
+        tokenInfo['Df'] = len(tokenFreqs)
+        tokenInfo['Idf'] = math.log((noOfDocs/len(tokenFreqs)), 2)
+        # Calculate weight of tokens. Formula Tf*Idf
+        for document in tokenFreqs:
+            tokenFreqs[document] = tokenFreqs[document]*tokenInfo['Idf']
+        tokenInfo['Tfs'] = tokenFreqs
+        # Add to inverted index.
+        invertedIndex[token] = tokenInfo
+    # Create a list of each documents vector length.
+    makeJson(invertedIndex, "./assets/inverted-index")
 
-    
-    #copy frequency_dict to weighted_dict
-    weighted_dict = copy.deepcopy(frequency_dict)
-    
-    for token in weighted_dict:
+    return invertedIndex
 
-        #creates copy of weighted_dict[word]
-        freq_in_documents_dict = weighted_dict[token]
-        
-        #calculates max_freq for a token in a document
-        max_freq = 0
-        for docID in freq_in_documents_dict:
-            if freq_in_documents_dict[docID] > max_freq:
-                max_freq = freq_in_documents_dict[docID]
+def openDictionary(file):
+    '''
+    Function to open and load a json file as dictionary.
 
-        #calculate inv_doc_freq
-        inverted_doc_freq = math.log((float (len(weighted_dict)) / len(freq_in_documents_dict)), 2)
+    :params string file: A filepath and name string.
+    :return: Json file contents loaded as a dictionary.
+    :returnType: dict
+    '''
+    with open(file) as json_file:
+        data = json.load(json_file)
 
-        
-        for docID in freq_in_documents_dict:
-
-            #creates copy of documents[id]
-            freq = freq_in_documents_dict[docID]
-
-            #calculate word_freq
-            word_freq = float(freq) / max_freq
-
-            #calculate weight value and set weight value to dict
-            freq_in_documents_dict[docID] = inverted_doc_freq * word_freq
-    
-    return weighted_dict
-
-    
-
-
+    return data
 
 
 
