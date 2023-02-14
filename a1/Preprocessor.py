@@ -1,77 +1,54 @@
 from collections import Counter
 import csv
+import os
 import re
 import nltk
 from nltk.stem.snowball import EnglishStemmer
 import string
 from nltk import TreebankWordTokenizer
 import json
+from pathlib import Path
+import xml.etree.ElementTree as ET
+
+# author: Simon Proulx 300067852
+# comments: code is not currently finished. Full version will be available soon
 
 
-def do_preprocessor(tweets_path, stopwords_path):
 
-    #Create string punctuation set
+def main():
+    do_preprocessor('')
+
+def do_preprocessor(filepath):
+    
+    filepath = 'coll'
+    
     punct_set = set(string.punctuation)
     
-    #Create stopwords array from path
-    stopwords = set(line.strip() for line in open(stopwords_path))
+    print(filepath)
     
-    #Create document_word_dict
     document_word_dict = {}
     
-    with open(tweets_path, encoding = "utf-8-sig") as file:
-        tweets_data = csv.reader(file, delimiter = '\t')
+    for filename in os.listdir(filepath):
+        p = Path(filepath+"/"+filename)
+        p.rename(p.with_suffix('.xml'))
         
-        for id, text in tweets_data:
-
-            #Remove links
-            text = re.sub(r"http\S+", "", text)
-            text = re.sub(r"https\S+", "", text)
-            text = re.sub(r"www\S+", "", text)
-
-            #Initialize words array
-            words = []
-
-            for i in TreebankWordTokenizer().tokenize(text):
-                if i.lower() not in stopwords and i.lower() not in punct_set:
-                    try:
-                        words.append(EnglishStemmer().stem(i.lower()))
-                    except:
-                        words.append(i.lower())
-
-            #Remove punctuation
-            table = str.maketrans('', '', string.punctuation)
-            tmp1 = words
-            words = [w.translate(table) for w in tmp1]
-
-            for x in words:
-                if x in stopwords:
-                    words.remove(x)
+        with open(filepath+"/"+filename+".xml", encoding = "utf-8-sig") as file:
             
-            # Remove words that contain numbers
-            tmp2 = []
-            for x in range(len(words)):
-                if bool(re.match(r'\b[a-zA-Z]+\b', words[x])):
-                    tmp2.append(words[x])
-            words = tmp2
-
-            #############################
-            #Add More Pre-Processing Here
-            tmp3 = []
-            for x in words:
-                tmp3.append(x.replace(u"\u201d", ""))
-            words = tmp3
-
-
-            #############################
+            tree = ET.fromstring(file.read())
+            for node in tree.iter('text'):
+                print('\n')
+                
+            
+            
+            
+        pr = Path(filepath+"/"+filename+".xml")
+        pr.rename(p.with_suffix(''))
     
-            
-            document_word_dict[int(str(id))] = words #keeping this structure intact is important
 
 
     #Save to folder
     #Important: When we test later, we only need to load the json file (No need to recreate a new file every query)
-    document_word_dict_path = "Modules/data/document_word_dict.json"
+    document_word_dict_path = "document_word_dict.json"
     with open(document_word_dict_path, "w") as file:
         json.dump(document_word_dict, file)  
     
@@ -90,4 +67,7 @@ def do_preprocessor(tweets_path, stopwords_path):
 
 
     #Returns both dictionaries (document_word_dict) and (document_word_count_dict)
-    return document_word_dict, document_word_count_dict
+    return document_word_dict, document_word_count_dict # only need tokenized dictionary
+
+if __name__=="__main__":
+    main()
