@@ -12,7 +12,10 @@ from nltk.stem import PorterStemmer
 # Download nltk libraries if not available locally.
 nltk.download('punkt')
 nltk.download('stopwords')
-#nltk.download('stem.porter')
+nltk.download('stem.porter')
+
+# Initialize porter stemmer.
+ps = PorterStemmer()
 
 def importCollection(collectionPath):
     '''
@@ -37,8 +40,8 @@ def importCollection(collectionPath):
         # Add tokens for each document.
         for text in res:
             pattern = r'[0-9]'
-            newStr = re.sub(pattern, '', str(text))
-            docVocabulary.extend(tokenize(newStr.replace("<text>", "").replace("</text>", "").replace(",", " ").replace("-", " ")))
+            newStr = re.sub(pattern, ' ', str(text))
+            docVocabulary.extend(tokenize(newStr.replace("<text>", "").replace("</text>", "").replace(",", " ").replace("-", " ").replace(".", " ").replace('\'', " ").replace('_', ' ')))
         
         # Add document tokens to all doc dictionary.
         vocabulary[filename]=docVocabulary
@@ -98,11 +101,8 @@ def tokenize(text):
     :return: Tokens from the string
     :returnType: List
     '''
-    # Initialize porter stemmer.
-    ps = PorterStemmer()
-
     # Custom Stopwards to tackle edge cases.
-    edgeStopWords = ['``', '\'s', 'n\'t', '\'d', "\'\'"]
+    edgeStopWords = ['``', '\'s', 'n\'t', '\'d', "\'\'", "..."]
 
     # Set of all stopwords.
     allStopWords = set(stopwords.words('english')).union((line.strip('\n') for line in open("./assets/stopwords.txt", "r"))).union(edgeStopWords)
