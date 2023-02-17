@@ -12,55 +12,61 @@ def createInvertedIndex(collectionTokens):
     :returnType: dict
     '''
     # List of unique token values.
-    allTokens = []
+    allTokens = dict()
     # List of tokens and docs they occur in.
     vocabulary = openDictionary(collectionTokens)
     # Total number of documents.
-    noOfDocs = len(collectionTokens)
+    noOfDocs = len(vocabulary)
 
     # Get all token values.
     for document in vocabulary:
-        allTokens.extend(vocabulary[document])
-
-    # before: 2439989
-    #print(allTokens)
-    # Remove duplicate tokens.
-    allTokens = list(dict.fromkeys(allTokens))
-    print(allTokens)
+        # For each document.
+        for token in vocabulary[document]:
+            # For each token in this document. 
+            if token not in allTokens and len(token) > 2:
+                # Check if token exists and its length.
+                allTokens[token] = [{document: 1}]
+            elif token in allTokens:
+                # Case: token already exists and doc too.
+                if document in allTokens[token][0]:
+                    allTokens[token][0][document] += 1
+                elif document not in allTokens[token]:
+                    allTokens[token][0][document] = 1
+        
     print(len(allTokens))
-    # after: 135983
-    #print(len(allTokens))
-    #exit()
 
     # Indexing the tokens obtained.
-    invertedIndex = dict()
     i = 0
     for token in allTokens:
         i = i + 1
         print(str(i) + " of " + str(len(allTokens)))
         # Store token data : df, idf, tfs.
         tokenInfo = dict()
-        # Tfs for token in each document.
-        tokenFreqs = dict()
-        for document in vocabulary:
-            # Get Tf for this document.
-            tokenFreq = vocabulary[document].count(token)
-            if tokenFreq > 0:
-                # Add document to list of document: Tfs.
-                tokenFreqs[document] = tokenFreq
         # Add Df, Idf values.
-        tokenInfo['Df'] = len(tokenFreqs)
-        tokenInfo['Idf'] = math.log((noOfDocs/len(tokenFreqs)), 2)
-        # Calculate weight of tokens. Formula Tf*Idf
-        for document in tokenFreqs:
-            tokenFreqs[document] = tokenFreqs[document]*tokenInfo['Idf']
-        tokenInfo['Tfs'] = tokenFreqs
+        tokenInfo['Df'] = len(allTokens[token][0])
+        tokenInfo['Idf'] = math.log((noOfDocs/len(allTokens[token][0])), 2)
+        # Calculate weight of tokens. Formula Tf*Idf.
+        for document in allTokens[token][0]:
+            allTokens[token][0][document] = allTokens[token][0][document]*tokenInfo['Idf']
         # Add to inverted index.
-        invertedIndex[token] = tokenInfo
-    # Create a list of each documents vector length.
-    makeJson(invertedIndex, "./assets/inverted-index")
+        allTokens[token].append(tokenInfo)
 
-    return invertedIndex
+
+    # Create a list of each documents vector length.
+    documentVectorlenghts = dict()
+    for document in vocabulary:
+        documentTokens = list(dict.fromkeys(vocabulary[document]))
+        squaredSum = 0.0
+        for token in documentTokens:
+            if token in allTokens:
+                squaredSum = squaredSum + (allTokens[token][0][document]*allTokens[token][0][document])
+        documentVectorlenghts[document] = math.sqrt(squaredSum)
+
+
+    makeJson(allTokens, "./assets/inverted-index")
+    makeJson(documentVectorlenghts, "./assets/doc-vector-lengths")
+
+    return allTokens, documentVectorlenghts
 
 def openDictionary(file):
     '''
@@ -74,11 +80,3 @@ def openDictionary(file):
         data = json.load(json_file)
 
     return data
-
-
-
-
-
-
-
-

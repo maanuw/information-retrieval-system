@@ -33,18 +33,40 @@ def importCollection(collectionPath):
         print(str(i) + " of 322")
         with open(os.path.join(collectionPath, filename), 'r') as f: 
             soup=BeautifulSoup(f, features='lxml', from_encoding="utf-8-sig")
+ 
+        resDoc=soup.findAll("doc")
 
-        res=soup.findAll("text")
-        # Token list for each document.
-        docVocabulary = []
-        # Add tokens for each document.
-        for text in res:
-            pattern = r'[0-9]'
-            newStr = re.sub(pattern, ' ', str(text))
-            docVocabulary.extend(tokenize(newStr.replace("<text>", "").replace("</text>", "").replace(",", " ").replace("-", " ").replace(".", " ").replace('\'', " ").replace('_', ' ')))
+        resDocNo=soup.findAll("docno")
         
-        # Add document tokens to all doc dictionary.
-        vocabulary[filename]=docVocabulary
+        # Add tokens for each document.
+        k = 0
+        for doc in resDoc:
+            # Extract text from docs.
+            restext = doc.findAll("text")
+            newStr=''
+            # Doc has more than one text which will lead to list of docno to unmatch from list of text tags.
+            if len(restext) > 1:
+                for j in range (len(restext)):
+                    obj = restext[j]
+                    newStr += str(obj)
+            else:
+                # doc doesnt have text tags.
+                if len(restext) == 0:
+                    continue
+                # doc has only one txt tag.
+                obj = restext[0]
+                newStr += str(obj)
+            
+            docVocabulary = []
+            pattern = r'[0-9]'
+            newStr = re.sub(pattern, ' ', str(newStr))
+            # Tokenize
+            docVocabulary.extend(tokenize(newStr.replace("<text>", "").replace("</text>", "").replace(",", " ").replace("-", " ").replace(".", " ").replace('\'', " ").replace('_', ' ')))
+            # Add docno
+            docNo = resDocNo[k]
+            # add to vocabulary.
+            vocabulary[str(docNo).replace("<docno>", "").replace("</docno>", "")] = docVocabulary
+            k = k + 1
         
     # Create json file.
     makeJson(vocabulary, "./assets/collection-tokens")
@@ -62,30 +84,32 @@ def importQuery(queryPath):
     # Loop over all queries.
     queryVocabulary = dict()
     
-    with open(os.path.join(queryPath, filename), 'r') as f: 
+    with open(queryPath, 'r') as f: 
         soup=BeautifulSoup(f, features='lxml', from_encoding="utf-8-sig")
 
     resTitle=soup.findAll("title")
     resDescription=soup.findAll("desc")
 
     # Token list for each query.
-    titleVocabulary = []
-    descVocabulary = []
+    titleVocabulary = [[]]
+    descVocabulary = [[]]
     # Add tokens for each query title.
     for title in resTitle:
         pattern = r'[0-9]'
         newStr = re.sub(pattern, '', str(title))
-        titleVocabulary.extend(tokenize(newStr.replace("<title>", "").replace("</title>", "").replace(",", " ").replace("-", " ")))
+        titleVocabulary.append(tokenize(newStr.replace("<title>", "").replace("</title>", "").replace(",", " ").replace("-", " ").replace(".", " ").replace('\'', " ").replace('_', ' ')))
 
     # Add tokens for each query description.
     for desc in resDescription:
         pattern = r'[0-9]'
         newStr = re.sub(pattern, '', str(desc))
-        descVocabulary.extend(tokenize(newStr.replace("<desc>", "").replace("</desc>", "").replace(",", " ").replace("-", " ")))
+        descVocabulary.append(tokenize(newStr.replace("<desc>", "").replace("</desc>", "").replace(",", " ").replace("-", " ").replace(".", " ").replace('\'', " ").replace('_', ' ')))
 
+    print(descVocabulary[50])
     # Add document tokens to all doc dictionary.
-    for i in range(len(resTitle)):
-        queryVocabulary[i] = titleVocabulary[i].extend(descVocabulary[i])
+    for i in range(len(resTitle)+1):
+        vocab = titleVocabulary[i] + descVocabulary[i]
+        queryVocabulary[i] = vocab
 
     # Create json file.
     makeJson(queryVocabulary, "./assets/query-tokens")
@@ -112,7 +136,7 @@ def tokenize(text):
     tokens = [ps.stem(word.lower()) for word in word_tokenize(text)
         if word.lower() not in allStopWords and word not in string.punctuation
         and not word.isnumeric() and not isFloat(word)]
-    
+
     # Return token list.
     return tokens
     
